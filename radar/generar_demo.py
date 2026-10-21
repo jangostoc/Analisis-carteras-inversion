@@ -3,7 +3,7 @@
 Las compañías, precios y estimaciones son inventados (paseos aleatorios con semilla fija);
 sólo sirven para mostrar el funcionamiento de la herramienta.
 """
-import json, math, random
+import datetime, json, math, random
 
 CZA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_'
 random.seed(7)
@@ -37,11 +37,32 @@ def serie_mensual(n, mu, sigma, p0):
         c.append(c[-1] * math.exp(mu / 12 + random.gauss(0, sigma)))
     return c
 
-rows, tv = [], {}
+A62 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+def q(x):
+    return A62[max(0, min(61, round(x)))]
+def ohl(o, h, l, c):
+    return q(math.log(o / c) * 100 + 30) + q(math.log(h / max(o, c)) * 100) + q(math.log(min(o, c) / l) * 100)
+
+def semanas(c, sig):
+    """4 velas semanales por mes que terminan exactamente en el cierre mensual."""
+    w = []
+    for k in range(1, len(c)):
+        a, b = math.log(c[k - 1]), math.log(c[k])
+        prev = c[k - 1]
+        for s in range(1, 5):
+            tgt = math.exp(a + (b - a) * s / 4 + (random.gauss(0, sig / 4) if s < 4 else 0))
+            o = prev * math.exp(random.gauss(0, sig / 12))
+            h = max(o, tgt) * (1 + abs(random.gauss(0, sig / 5)))
+            l = min(o, tgt) * (1 - abs(random.gauss(0, sig / 5)))
+            w.append((o, h, l, tgt, random.uniform(0.5, 1.5) * 1e6 / tgt))
+            prev = tgt
+    return w
+
+HOY = datetime.date(2026, 10, 21)
+rows, s5, ohlc, wk, earn, ersess, mcap = [], {}, {}, {}, {}, {}, {}
 for tk, name, ex, pe, fc, g, mu, sig in EMPRESAS:
     n = 240  # 20 años de cierres mensuales (2006-11 .. 2026-10)
     c = serie_mensual(n, mu, sig, random.uniform(5, 40))
-    # máximo histórico y caída mes a mes de los últimos 10 años
     run, dd = 0, []
     for v in c:
         run = max(run, v); dd.append(round((v / run - 1) * 100))
@@ -51,25 +72,33 @@ for tk, name, ex, pe, fc, g, mu, sig in EMPRESAS:
     gmed = sorted(gy)[2]
     rows.append([tk, tk, ex, name, pe, fc, gmed, '31/12', 2025, ann, '|'.join(map(str, gy)), 0,
                  ath, dd[-120:], 2016, encode(c, 2006, 11)])
-    # velas semanales sintéticas de 5 años para Fibonacci y volumen por precio
-    w = []
-    for v in c[-60:]:
-        for _ in range(4):
-            o = v * math.exp(random.gauss(0, sig / 3)); cl = o * math.exp(random.gauss(0, sig / 3))
-            h = max(o, cl) * (1 + abs(random.gauss(0, sig / 4))); l = min(o, cl) * (1 - abs(random.gauss(0, sig / 4)))
-            w.append((o, h, l, cl, random.uniform(0.5, 1.5) * 1e6 / v))
-    w[-1] = (w[-1][0], max(w[-1][1], c[-1]), min(w[-1][2], c[-1]), c[-1], w[-1][4])
-    hi = max(x[1] for x in w); lo = min(x[2] for x in w)
-    hiT = max(range(len(w)), key=lambda i: w[i][1]); loT = min(range(len(w)), key=lambda i: w[i][2])
+    w = semanas(c, sig)  # semana 4·(k-1)..4·k-1 pertenece al mes k
+    # velas mensuales de los últimos 10 años
+    m0 = n - 120
+    ohlc[tk] = '2016-11|' + ''.join(
+        ohl(w[4 * (k - 1)][0], max(x[1] for x in w[4 * (k - 1):4 * k]), min(x[2] for x in w[4 * (k - 1):4 * k]), c[k])
+        for k in range(m0, n))
+    # velas semanales de los últimos 5 años
+    ws = w[-261:]
+    t0 = int(datetime.datetime(2021, 10, 25, tzinfo=datetime.timezone.utc).timestamp())
+    Ls = [round(math.log(x[3]) * 200) for x in ws]
+    body = f'{Ls[0]}:' + ''.join(CZA[d + 31] if -31 <= d <= 31 else f'~{d},' for d in (b - a for a, b in zip(Ls, Ls[1:])))
+    wk[tk] = f'{t0}|{body}|' + ''.join(ohl(o, h, l, cl) for o, h, l, cl, _ in ws)
+    hi = max(x[1] for x in ws); lo = min(x[2] for x in ws)
+    hiT = max(range(len(ws)), key=lambda i: ws[i][1]); loT = min(range(len(ws)), key=lambda i: ws[i][2])
     N, step = 24, (hi - lo) / 24; up = [0.0] * N; dn = [0.0] * N
-    for o, h, l, cl, vol in w:
+    for o, h, l, cl, vol in ws:
         for j in range(N):
             a, z = lo + j * step, lo + (j + 1) * step
             f = max(0, min(h, z) - max(l, a)) / (h - l) if h > l else 0
             (up if cl >= o else dn)[j] += vol * f
     mx = max(u + d for u, d in zip(up, dn))
-    tv[tk] = {'hi': round(hi, 4), 'lo': round(lo, 4), 'last': round(c[-1], 4), 'hiT': hiT, 'loT': loT, 'n': len(w),
-              'up': [round(u / mx * 61) for u in up], 'dn': [round(d / mx * 61) for d in dn]}
+    s5[tk] = {'hi': round(hi, 4), 'lo': round(lo, 4), 'last': round(c[-1], 4), 'hiT': hiT, 'loT': loT, 'n': len(ws),
+              'up': [round(u / mx * 1000) for u in up], 'dn': [round(d / mx * 1000) for d in dn]}
+    earn[tk] = (HOY + datetime.timedelta(days=random.randint(1, 45))).isoformat()
+    ersess[tk] = random.choice(['pre', 'after', 'pre', 'after', None])
+    mcap[tk] = round(10 ** random.uniform(3, 6.3))  # millones de USD
 
-json.dump({'rows': rows, 'tv': tv}, open('datos_demo.json', 'w'), ensure_ascii=False)
+json.dump({'asof': '21 oct 2026', 'rows': rows, 's5': s5, 'ohlc': ohlc, 'wk': wk, 'earn': earn,
+           'ersess': ersess, 'mcap': mcap}, open('datos_demo.json', 'w'), ensure_ascii=False)
 print(len(rows), 'empresas ficticias generadas')

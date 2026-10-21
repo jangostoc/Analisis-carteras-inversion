@@ -30,15 +30,18 @@ Herramienta interactiva para **analizar y monitorizar una cartera de acciones y 
 | PEG (PER) · PEG (MC/FCF) | Múltiplo ÷ crecimiento. < 1 indica valoración baja respecto al crecimiento esperado |
 | PER vs media 10 años | Posición del PER actual frente a su media histórica (solo años con beneficio) |
 | From ATH | Distancia al máximo histórico, con la caída mes a mes de los últimos 10 años |
+| Rentabilidad YTD | Variación desde el cierre del año anterior, con barra para comparar de un vistazo |
+| Capitalización | Valor bursátil en dólares (T / B / M), filtrable por rango |
 
 **Tendencia y soportes** (datos de mercado)
 
 | Indicador | Definición |
 |---|---|
-| COTIZHIST (mensual) | Cotización mensual en escala logarítmica con SMA 50 y RSI 14; ampliable con zoom |
+| COTIZHIST (mensual) | Cotización mensual en escala logarítmica con SMA 50 y RSI 14; conmutable entre todo el histórico y 5 años, con o sin RSI, en línea o velas |
 | Fibonacci 5A | Retrocesos 23,6 / 38,2 / 50 / 61,8 / 78,6 % entre el máximo y el mínimo de 5 años (velas semanales) |
 | Volumen por precio 5A | Perfil de volumen por rango de precios (24 filas, área de valor 70 %, POC, VAH/VAL) y nodo de alto volumen más cercano por debajo del precio |
 | Soporte fuerte (rango) | Zona donde **coinciden** un nivel de Fibonacci y un nodo de volumen (≤ 5 % de separación): dos métodos distintos apuntando al mismo nivel |
+| Próx. resultados | Fecha de la próxima publicación trimestral, si es antes de la apertura (PRE) o tras el cierre (AFTER), y días restantes |
 
 Las distancias a soporte se codifican por color: 🟢 hasta −10 % · 🟡 −10 a −20 % · 🟠 −20 a −30 % · 🔴 más de −30 %.
 
@@ -48,14 +51,30 @@ Las distancias a soporte se codifican por color: 🟢 hasta −10 % · 🟡 −1
 
 ## 🧰 Funcionalidades
 
-- **Filtros combinables:** PEG < 1, PER bajo su media, y rangos libres (≤, ≥, entre) para PEG, RSI y caída hasta el soporte fuerte.
-- **Personalización de la vista:** mostrar/ocultar columnas y tickers (con buscador), reordenar columnas arrastrando, ajustar anchos y alto de cabecera, modo claro/oscuro. Las preferencias se guardan en el navegador.
+- **Filtros combinables:** PEG < 1, PER bajo su media, y rangos libres (≤, ≥, entre) para PEG, RSI, capitalización (en miles de millones de USD) y caída hasta el soporte fuerte.
+- **Personalización de la vista:** mostrar/ocultar columnas y tickers (con buscador), **reordenar columnas arrastrándolas en el propio menú** o en la cabecera, ajustar anchos y alto de cabecera, zoom por tabla, cabecera fija al desplazarse y modo claro/oscuro. Las preferencias se guardan en el navegador.
+- **Ordenación inteligente:** cualquier columna numérica; en resultados, a igual fecha aparecen primero las compañías que publican antes de la apertura.
 - **Ficha por empresa:** histórico del PER a cierre fiscal, crecimiento estimado año a año y una explicación de cada indicador adaptada a los datos de la compañía.
-- **Gráfico ampliable:** zoom con rueda o pellizco, desplazamiento, rangos 1A/3A/5A/10A/Todo, escala log/lineal y lectura de valores al pasar el cursor.
+- **Todos los gráficos son ampliables** (clic en la ficha abierta) con zoom por rueda o pellizco, desplazamiento y lectura de valores al pasar el cursor:
+  - **Cotización:** rangos 1A–10A/Todo, escala log, mensual/semanal, línea/velas, superposición de PER NTM y crecimiento estimado, barra de navegación y **líneas de tendencia dibujadas por el usuario** que se guardan, se mueven y se borran una a una.
+  - **PER NTM 10 años:** intervalos 3A/5A/10A o años a medida, con media y mediana recalculadas para el intervalo y comparación con el PER actual.
+  - **From ATH:** caída mensual con la peor caída del intervalo y el último máximo.
+  - **Fibonacci 5A:** velas semanales con cada nivel etiquetado (precio y distancia al precio actual) y el soporte más cercano resaltado.
+  - **Volumen por precio 5A:** perfil alcista/bajista sobre el precio, POC, área de valor y nodo de soporte, con detalle por fila.
+
+![Menú de columnas con orden por arrastre](img/radar-columnas.png)
 
 ![Ficha de empresa](img/radar-ficha.png)
 
-![Gráfico ampliado con zoom](img/radar-zoom.png)
+![Gráfico de cotización ampliado en velas](img/radar-zoom.png)
+
+![Histórico del PER NTM por intervalos](img/radar-per.png)
+
+![Fibonacci 5 años con niveles etiquetados](img/radar-fibonacci.png)
+
+![Volumen por precio 5 años (modo oscuro)](img/radar-volumen-dark.png)
+
+![Caída desde máximos](img/radar-ath.png)
 
 ---
 
